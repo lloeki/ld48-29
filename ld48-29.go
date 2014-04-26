@@ -12,14 +12,28 @@ var _ = gl.Begin // TODO: remove later
 var _ = glfw.Init // TODO: remove later
 var _ = pa.Initialize // TODO: remove later
 
-func errorCallback(err glfw.ErrorCode, desc string) {
+func onError(err glfw.ErrorCode, desc string) {
     log.Printf("%v: %v\n", err, desc)
+}
+
+func onKey(window *glfw.Window, k glfw.Key, s int, action glfw.Action, mods glfw.ModifierKey) {
+    if action != glfw.Press {
+        return
+    }
+
+    switch glfw.Key(k) {
+    case glfw.KeyEscape:
+        window.SetShouldClose(true)
+    default:
+        return
+    }
+
 }
 
 func main() {
     runtime.LockOSThread()
 
-    glfw.SetErrorCallback(errorCallback)
+    glfw.SetErrorCallback(onError)
 
     if !glfw.Init() {
         panic("Can't init glfw!")
@@ -30,6 +44,8 @@ func main() {
     if err != nil {
         log.Panic(err)
     }
+
+    window.SetKeyCallback(onKey)
 
     window.MakeContextCurrent()
 

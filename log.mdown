@@ -28,3 +28,8 @@ All time is CEST
 
   Duh. Found via rubberducking I Was calling some stuff *before*
   MakeContextCurrent. 20min lost.
+
+- 09:57
+
+  Sideband idea: make this file post new LIs to Twitter on push (with link to
+  file+line on Github)

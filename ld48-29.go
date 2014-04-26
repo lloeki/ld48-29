@@ -8,8 +8,6 @@ import (
     pa "code.google.com/p/portaudio-go/portaudio"
 )
 
-var _ = gl.Begin // TODO: remove later
-var _ = glfw.Init // TODO: remove later
 var _ = pa.Initialize // TODO: remove later
 
 func onError(err glfw.ErrorCode, desc string) {
@@ -27,7 +25,6 @@ func onKey(window *glfw.Window, k glfw.Key, s int, action glfw.Action, mods glfw
     default:
         return
     }
-
 }
 
 func main() {
@@ -69,7 +66,6 @@ func setup() {
     gl.ClearDepth(1)
     gl.DepthFunc(gl.LEQUAL)
 }
-
 
 func destroy() {
     // TODO: release objects

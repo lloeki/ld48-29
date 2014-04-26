@@ -26,12 +26,15 @@ func main() {
     }
     defer glfw.Terminate()
 
-    window, err := glfw.CreateWindow(640, 480, "LD48", nil, nil)
+    window, err := glfw.CreateWindow(640, 480, "LD48-29", nil, nil)
     if err != nil {
         log.Panic(err)
     }
 
     window.MakeContextCurrent()
+
+    setup()
+    defer destroy()
 
     for !window.ShouldClose() {
         render()
@@ -40,6 +43,25 @@ func main() {
     }
 }
 
+func setup() {
+    gl.Enable(gl.TEXTURE_2D)
+    gl.Enable(gl.DEPTH_TEST)
+    gl.Enable(gl.LIGHTING)
+    gl.Enable(gl.CULL_FACE)
+
+    gl.ClearColor(0.0, 0.0, 0.5, 0)
+    gl.ClearDepth(1)
+    gl.DepthFunc(gl.LEQUAL)
+}
+
+
+func destroy() {
+    // TODO: release objects
+}
+
 func render() {
-    // TODO: draw!
+    gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+    gl.MatrixMode(gl.PROJECTION)
+    gl.LoadIdentity()
+    gl.Frustum(-1, 1, -1, 1, 1.0, 10.0)
 }

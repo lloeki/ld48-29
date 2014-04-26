@@ -4,11 +4,13 @@ All time is CEST
 
 - 07:14
 
-  Wake up, discover the theme on Twitter. Start scrambling ideas. Take breakfast.
+  Wake up, discover the theme on Twitter. Start scrambling ideas. Take
+  breakfast.
 
 - 08:22
 
-  Initialise github repo. A few ideas popping up already. Try to avoid obvious sea references.
+  Initialise github repo. A few ideas popping up already. Try to avoid obvious
+  sea references.
 
 - 08:35
 
@@ -17,3 +19,12 @@ All time is CEST
 - 08:41
 
   Dev log now publicly advertised.
+
+- 09:51
+
+  First hurdle. GL doesn't want to Clear and I have no clue.
+
+- 09:55
+
+  Duh. Found via rubberducking I Was calling some stuff *before*
+  MakeContextCurrent. 20min lost.

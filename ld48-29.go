@@ -3,12 +3,20 @@ package main
 import (
     "runtime"
     "log"
+    "io"
+    "errors"
+    "os"
+    "image"
+    "image/png"
     gl "github.com/go-gl/gl"
     glfw "github.com/go-gl/glfw3"
     pa "code.google.com/p/portaudio-go/portaudio"
 )
 
 var _ = pa.Initialize // TODO: remove later
+
+
+// glfw callbacks
 
 func onError(err glfw.ErrorCode, desc string) {
     log.Printf("%v: %v\n", err, desc)
@@ -26,6 +34,48 @@ func onKey(window *glfw.Window, k glfw.Key, s int, action glfw.Action, mods glfw
         return
     }
 }
+
+
+// utils
+
+func readTexture(r io.Reader) (texId gl.Texture, err error) {
+    img, err := png.Decode(r)
+    if err != nil {
+        return gl.Texture(0), err
+    }
+
+    rgba, ok := img.(*image.NRGBA)
+    if !ok {
+        return gl.Texture(0), errors.New("not an NRGBA image")
+    }
+
+    texId = gl.GenTexture()
+    texId.Bind(gl.TEXTURE_2D)
+    gl.TexParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+    gl.TexParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+
+    w, h := rgba.Bounds().Dx(), rgba.Bounds().Dy()
+    raw := make([]byte, w*h*4)
+    raw_stride := w * 4
+    if raw_stride != rgba.Stride {
+        return gl.Texture(0), errors.New("incompatible stride")
+    }
+
+    dst := len(raw) - raw_stride
+    for src := 0; src < len(rgba.Pix); src += rgba.Stride {
+        copy(raw[dst:dst+raw_stride], rgba.Pix[src:src+rgba.Stride])
+        dst -= raw_stride
+    }
+
+    lod := 0
+    border := 0
+    gl.TexImage2D(gl.TEXTURE_2D, lod, gl.RGBA, w, h, border, gl.RGBA, gl.UNSIGNED_BYTE, raw)
+
+    return
+}
+
+
+// main
 
 func main() {
     runtime.LockOSThread()
@@ -46,17 +96,20 @@ func main() {
 
     window.MakeContextCurrent()
 
-    setup()
-    defer destroy()
+    textures, lists := setup()
+    defer destroy(textures)
 
     for !window.ShouldClose() {
-        render()
+        render(textures, lists)
         window.SwapBuffers()
         glfw.PollEvents()
     }
 }
 
-func setup() {
+
+// renderer
+
+func setup() (textures map[string]gl.Texture, lists map[string]uint) {
     gl.Enable(gl.TEXTURE_2D)
     gl.Enable(gl.DEPTH_TEST)
     gl.Enable(gl.LIGHTING)
@@ -65,15 +118,61 @@ func setup() {
     gl.ClearColor(0.0, 0.0, 0.5, 0)
     gl.ClearDepth(1)
     gl.DepthFunc(gl.LEQUAL)
+
+    textures = map[string]gl.Texture{}
+    lists = map[string]uint{}
+
+    img, err := os.Open("spritesheet.png")
+    if err != nil { log.Panic(err) }
+    defer img.Close()
+
+    spriteSheet, err := readTexture(img)
+    if err != nil { log.Panic(err) }
+    textures["sprites"] = spriteSheet
+
+    quad := gl.GenLists(1)
+    gl.NewList(quad, gl.COMPILE)
+    gl.Begin(gl.QUADS)
+    gl.Normal3f(0, 0, 1)
+    gl.TexCoord2f(0, 0)
+    gl.Vertex3f(-1.0, -1.0, 1.0)
+    gl.TexCoord2f(0.5, 0)
+    gl.Vertex3f(1.0, -1.0, 1.0)
+    gl.TexCoord2f(0.5, 0.5)
+    gl.Vertex3f(1.0, 1.0, 1.0)
+    gl.TexCoord2f(0, 0.5)
+    gl.Vertex3f(-1.0, 1.0, 1.0)
+    gl.End()
+    gl.EndList()
+
+    lists["test"] = quad
+
+    return
 }
 
-func destroy() {
-    // TODO: release objects
+func destroy(textures map[string]gl.Texture) {
+    for _, texture := range textures {
+        texture.Delete()
+    }
 }
 
-func render() {
+func render(textures map[string]gl.Texture, lists map[string]uint) {
     gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
     gl.MatrixMode(gl.PROJECTION)
+
     gl.LoadIdentity()
     gl.Frustum(-1, 1, -1, 1, 1.0, 10.0)
+    gl.Translatef(0, 0, -3.0)
+
+    ambient    := []float32{0.5, 0.5, 0.5, 1}
+    diffuse    := []float32{1, 1, 1, 1}
+    lightpos   := []float32{-5, 5, 10, 0}
+    gl.Lightfv(gl.LIGHT0, gl.AMBIENT, ambient)
+    gl.Lightfv(gl.LIGHT0, gl.DIFFUSE, diffuse)
+    gl.Lightfv(gl.LIGHT0, gl.POSITION, lightpos)
+    gl.Enable(gl.LIGHT0)
+
+    textures["sprites"].Bind(gl.TEXTURE_2D)
+    gl.Color4f(1, 1, 1, 1)
+    gl.CallList(lists["test"])
 }

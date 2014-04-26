@@ -37,3 +37,17 @@ All time is CEST
 - 10:08
 
   I miss fuzzy jump to function in vim. Adding ctags to CtrlP right now, with `fswatch . "ctags *.go"`
+
+- 10:35
+
+  Still sorting out the basic frame code, but I've got an idea, and backgroundly crunching on game mechanics.
+
+- 10:36
+
+  Twitter stream in #LD48 proves to be a real boost to morale. Much less noisy than IRC.
+
+- 11:57
+
+  And we have a spritesheet! ![](screenshots/1.png)
+
+

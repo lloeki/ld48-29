@@ -2,6 +2,8 @@ package main
 
 import (
     "runtime"
+    "time"
+    "math"
     "log"
     "io"
     "errors"
@@ -123,11 +125,11 @@ func scaledSpriteQuad(x int, y int, w int, h int, scale float32) {
     qsize := 1.0 * scale
 
     // relative model coords
-    // sprite-centered origin
-    qx1 := -qsize * float32(w) / 2.0
-    qy1 := -qsize * float32(h) / 2.0
-    qx2 :=  qsize * float32(w) / 2.0
-    qy2 :=  qsize * float32(h) / 2.0
+    // sprite-centered origin, half each way
+    qx1 := -qsize * float32(unit * w) / 2.0
+    qy1 := -qsize * float32(unit * h) / 2.0
+    qx2 :=  qsize * float32(unit * w) / 2.0
+    qy2 :=  qsize * float32(unit * h) / 2.0
 
     // draw sprite quad
     gl.MatrixMode(gl.MODELVIEW)
@@ -142,6 +144,13 @@ func scaledSpriteQuad(x int, y int, w int, h int, scale float32) {
     gl.TexCoord2f(rx1, ry2)
     gl.Vertex3f(qx1, qy2, 1.0)
     gl.End()
+}
+
+func drawSprite(texture gl.Texture, x float64, y float64, list uint) {
+    gl.LoadIdentity()
+    texture.Bind(gl.TEXTURE_2D)
+    gl.Translatef(float32(x), float32(y), 0)
+    gl.CallList(list)
 }
 
 // main
@@ -220,10 +229,15 @@ func render(textures map[string]gl.Texture, lists map[string]uint) {
     gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
     // set viewport
+    width := float32(640.0)
+    height := float32(480.0)
+    gl.Viewport(0, 0, int(width)*2, int(height)*2) // times 2 because HiDPI
     gl.MatrixMode(gl.PROJECTION)
     gl.LoadIdentity()
-    gl.Frustum(-1, 1, -1, 1, 1.0, 10.0)
-    gl.Translatef(0, 0, -3.0)
+    gl.Ortho(0, float64(width), 0, float64(height), -1.0, 1.0)
+
+    gl.MatrixMode(gl.MODELVIEW);
+    gl.LoadIdentity()
 
     // lighten things
     ambient    := []float32{0.5, 0.5, 0.5, 1}
@@ -234,6 +248,48 @@ func render(textures map[string]gl.Texture, lists map[string]uint) {
     gl.Lightfv(gl.LIGHT0, gl.POSITION, lightpos)
     gl.Enable(gl.LIGHT0)
 
-    textures["sprites"].Bind(gl.TEXTURE_2D)
-    gl.CallList(lists["test"])
+    gl.Disable(gl.TEXTURE_2D)
+    gl.Disable(gl.LIGHTING)
+    gl.Begin(gl.TRIANGLES)
+    gl.Color3f(1.0, 0.0, 0.0)
+    gl.Vertex3f(0, 0, 0.0)
+    gl.Color3f(0.0, 1.0, 0.0)
+    gl.Vertex3f(width, 0, 0.0)
+    gl.Color3f(0.0, 0.0, 1.0)
+    gl.Vertex3f(0.0, height, 0.0)
+    gl.End()
+    gl.Begin(gl.TRIANGLES)
+    gl.Color3f(1.0, 0.0, 0.0)
+    gl.Vertex3f(width, height, 0.0)
+    gl.Color3f(0.0, 0.0, 1.0)
+    gl.Vertex3f(0.0, height, 0.0)
+    gl.Color3f(0.0, 1.0, 0.0)
+    gl.Vertex3f(width, 0, 0.0)
+    gl.End()
+    gl.Enable(gl.TEXTURE_2D)
+    gl.Enable(gl.LIGHTING)
+
+    drawSprite(textures["sprites"],   0,   0, lists["test"])
+    drawSprite(textures["sprites"], 320,   0, lists["test"])
+    drawSprite(textures["sprites"], 640,   0, lists["test"])
+    drawSprite(textures["sprites"], 320, 240, lists["test"])
+    drawSprite(textures["sprites"], 320, 480, lists["test"])
+    drawSprite(textures["sprites"],   0, 240, lists["test"])
+    drawSprite(textures["sprites"],   0, 480, lists["test"])
+    drawSprite(textures["sprites"], 640, 240, lists["test"])
+    drawSprite(textures["sprites"], 640, 480, lists["test"])
+
+    t := float64(time.Now().UnixNano()) / math.Pow(10, 9)
+
+    x := (math.Sin(2*math.Pi*t/60) + 1)/2 * float64(width)
+    y := (math.Cos(2*math.Pi*t/60) + 1)/2 * float64(height)
+    drawSprite(textures["sprites"], x, y, lists["test"])
+
+    x = (math.Sin(10*2*math.Pi*t/60) + 1)/2 * float64(width)
+    y = (math.Cos(10*2*math.Pi*t/60) + 1)/2 * float64(height)
+    drawSprite(textures["sprites"], x, y, lists["test"])
+
+    x = (math.Sin(60*2*math.Pi*t/60) + 1)/2 * float64(width)
+    y = (math.Cos(60*2*math.Pi*t/60) + 1)/2 * float64(height)
+    drawSprite(textures["sprites"], x, y, lists["test"])
 }

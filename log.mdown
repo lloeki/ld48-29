@@ -73,3 +73,9 @@ All time is CEST
 - 16:09
 
   Sprites keep their relative size and aspect ratio. Also, sprite scaling.
+
+- 17:54
+
+  After much fight against GLOrtho, now having arbitrary sprite positioning in viewport coordinates.
+
+  ![](screenshots/3.png)

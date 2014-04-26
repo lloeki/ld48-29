@@ -103,8 +103,8 @@ func spriteQuad(x int, y int, w int, h int) {
 
     x1 := x * unit
     y1 := y * unit
-    x2 := x * unit + w * unit
-    y2 := y * unit + h * unit
+    x2 := x1 + w * unit
+    y2 := y1 + h * unit
 
     rx1 := float32(x1) / float32(size)
     rx2 := float32(x2) / float32(size)

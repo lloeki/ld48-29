@@ -13,3 +13,7 @@ All time is CEST
 - 08:35
 
   Start this dev log!
+
+- 08:41
+
+  Dev log now publicly advertised.

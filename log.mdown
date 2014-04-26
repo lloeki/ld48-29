@@ -26,7 +26,7 @@ All time is CEST
 
 - 09:55
 
-  Duh. Found via rubberducking I Was calling some stuff *before*
+  Duh. Found via rubberducking I was calling some stuff *before*
   MakeContextCurrent. 20min lost.
 
 - 09:57
@@ -50,4 +50,6 @@ All time is CEST
 
   And we have a spritesheet! ![](screenshots/1.png)
 
+- 12:12
 
+  Taking a light break to stuff self.body with calories

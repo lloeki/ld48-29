@@ -6,6 +6,7 @@ import (
     "io"
     "errors"
     "os"
+    "syscall"
     "image"
     "image/png"
     gl "github.com/go-gl/gl"
@@ -15,6 +16,24 @@ import (
 
 var _ = pa.Initialize // TODO: remove later
 
+
+// iterate faster
+
+func rerun() (err error) {
+    log.Println("rerun")
+    gopath := os.Getenv("GOPATH")
+    env := []string{"GOPATH=" + gopath}
+    args := []string{"go", "run", "ld48-29.go"}
+    err = syscall.Exec("/usr/local/bin/go", args, env)
+    log.Fatal(err)
+
+    return
+}
+
+func reexec() {
+    err := rerun()
+    if err != nil { panic(err) }
+}
 
 // glfw callbacks
 
@@ -28,6 +47,10 @@ func onKey(window *glfw.Window, k glfw.Key, s int, action glfw.Action, mods glfw
     }
 
     switch glfw.Key(k) {
+    case glfw.KeyR:
+        if mods & glfw.ModSuper != 0 {
+            reexec()
+        }
     case glfw.KeyEscape:
         window.SetShouldClose(true)
     default:
@@ -74,6 +97,33 @@ func readTexture(r io.Reader) (texId gl.Texture, err error) {
     return
 }
 
+func spriteQuad(x int, y int, w int, h int) {
+    size := 256
+    unit := 16
+
+    x1 := x * unit
+    y1 := y * unit
+    x2 := x * unit + w * unit
+    y2 := y * unit + h * unit
+
+    rx1 := float32(x1) / float32(size)
+    rx2 := float32(x2) / float32(size)
+    ry1 := float32(y1) / float32(size)
+    ry2 := float32(y2) / float32(size)
+
+    gl.MatrixMode(gl.MODELVIEW)
+    gl.Begin(gl.QUADS)
+    gl.Normal3f(0, 0, 1)
+    gl.TexCoord2f(rx1, ry1)
+    gl.Vertex3f(-1.0, -1.0, 1.0)
+    gl.TexCoord2f(rx2, ry1)
+    gl.Vertex3f(1.0, -1.0, 1.0)
+    gl.TexCoord2f(rx2, ry2)
+    gl.Vertex3f(1.0, 1.0, 1.0)
+    gl.TexCoord2f(rx1, ry2)
+    gl.Vertex3f(-1.0, 1.0, 1.0)
+    gl.End()
+}
 
 // main
 
@@ -132,17 +182,7 @@ func setup() (textures map[string]gl.Texture, lists map[string]uint) {
 
     quad := gl.GenLists(1)
     gl.NewList(quad, gl.COMPILE)
-    gl.Begin(gl.QUADS)
-    gl.Normal3f(0, 0, 1)
-    gl.TexCoord2f(0, 0)
-    gl.Vertex3f(-1.0, -1.0, 1.0)
-    gl.TexCoord2f(0.5, 0)
-    gl.Vertex3f(1.0, -1.0, 1.0)
-    gl.TexCoord2f(0.5, 0.5)
-    gl.Vertex3f(1.0, 1.0, 1.0)
-    gl.TexCoord2f(0, 0.5)
-    gl.Vertex3f(-1.0, 1.0, 1.0)
-    gl.End()
+    spriteQuad(0, 0, 4, 4)
     gl.EndList()
 
     lists["test"] = quad

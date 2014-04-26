@@ -48,8 +48,24 @@ All time is CEST
 
 - 11:57
 
-  And we have a spritesheet! ![](screenshots/1.png)
+  And we have a spritesheet!
+
+  ![](screenshots/1.png)
 
 - 12:12
 
   Taking a light break to stuff self.body with calories
+
+- 12:45
+
+  Short on supplies. Have to get out or risk falling down in 2 hours due to lack or carbohydrates in bloodstream.
+
+- 14:12
+
+  Got sidetracked in reading Doom engine trivia
+
+- 15:21
+
+  Getting to terms with OpenGL. Sprite system coming along nicely
+
+  ![](screenshots/2.png)

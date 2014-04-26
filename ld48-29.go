@@ -43,7 +43,7 @@ func onError(err glfw.ErrorCode, desc string) {
     log.Printf("%v: %v\n", err, desc)
 }
 
-func onKey(window *glfw.Window, k glfw.Key, s int, action glfw.Action, mods glfw.ModifierKey) {
+func onKey(input chan int, window *glfw.Window, k glfw.Key, s int, action glfw.Action, mods glfw.ModifierKey) {
     if action != glfw.Press {
         return
     }
@@ -53,6 +53,8 @@ func onKey(window *glfw.Window, k glfw.Key, s int, action glfw.Action, mods glfw
         if mods & glfw.ModSuper != 0 {
             reexec()
         }
+    case glfw.KeyUp, glfw.KeyDown, glfw.KeyLeft, glfw.KeyRight:
+        input <- 1
     case glfw.KeyEscape:
         window.SetShouldClose(true)
     default:
@@ -159,17 +161,24 @@ func drawSprite(texture gl.Texture, x float64, y float64, a float64, list uint) 
 // main
 
 func main() {
-    c := make(chan int)
+    done := make(chan int)
+    input := make(chan int, 64)
 
-    go renderer(c)
+    go renderer(done, input)
+    go func() {
+        for {
+            _ = <- input
+            log.Print("input")
+        }
+    }()
 
-    <-c
+    <-done
 }
 
 
 // renderer
 
-func renderer(c chan int) {
+func renderer(done chan int, input chan int) {
     runtime.LockOSThread()
 
     glfw.SetErrorCallback(onError)
@@ -184,7 +193,11 @@ func renderer(c chan int) {
         log.Panic(err)
     }
 
-    window.SetKeyCallback(onKey)
+    onKeyClosure := func (window *glfw.Window, k glfw.Key, s int, action glfw.Action, mods glfw.ModifierKey) {
+        onKey(input, window, k, s, action, mods)
+    }
+
+    window.SetKeyCallback(onKeyClosure)
 
     window.MakeContextCurrent()
 
@@ -197,7 +210,7 @@ func renderer(c chan int) {
         glfw.PollEvents()
     }
 
-    c <- 1
+    done <- 1
 }
 
 func setup() (textures map[string]gl.Texture, lists map[string]uint) {

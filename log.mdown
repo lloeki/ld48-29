@@ -93,3 +93,7 @@ All time is CEST
   Sprite rotation support
 
   ![](screenshots/4.gif)
+
+- 20:34
+
+  Going concurrent. Goroutines, channels and closures make passing input events outside the locked OpenGL thread *really* easy.

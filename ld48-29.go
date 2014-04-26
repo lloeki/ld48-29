@@ -146,12 +146,15 @@ func scaledSpriteQuad(x int, y int, w int, h int, scale float32) {
     gl.End()
 }
 
-func drawSprite(texture gl.Texture, x float64, y float64, list uint) {
+func drawSprite(texture gl.Texture, x float64, y float64, a float64, list uint) {
+    deg := math.Mod(360 * float64(a) / (2 * math.Pi), 360.0)
     gl.LoadIdentity()
     texture.Bind(gl.TEXTURE_2D)
     gl.Translatef(float32(x), float32(y), 0)
+    gl.Rotatef(float32(deg), 0.0, 0.0, 1.0);
     gl.CallList(list)
 }
+
 
 // main
 
@@ -269,27 +272,30 @@ func render(textures map[string]gl.Texture, lists map[string]uint) {
     gl.Enable(gl.TEXTURE_2D)
     gl.Enable(gl.LIGHTING)
 
-    drawSprite(textures["sprites"],   0,   0, lists["test"])
-    drawSprite(textures["sprites"], 320,   0, lists["test"])
-    drawSprite(textures["sprites"], 640,   0, lists["test"])
-    drawSprite(textures["sprites"], 320, 240, lists["test"])
-    drawSprite(textures["sprites"], 320, 480, lists["test"])
-    drawSprite(textures["sprites"],   0, 240, lists["test"])
-    drawSprite(textures["sprites"],   0, 480, lists["test"])
-    drawSprite(textures["sprites"], 640, 240, lists["test"])
-    drawSprite(textures["sprites"], 640, 480, lists["test"])
+    drawSprite(textures["sprites"],   0,   0, 0, lists["test"])
+    drawSprite(textures["sprites"], 320,   0, 0, lists["test"])
+    drawSprite(textures["sprites"], 640,   0, 0, lists["test"])
+    drawSprite(textures["sprites"], 320, 240, 0, lists["test"])
+    drawSprite(textures["sprites"], 320, 480, 0, lists["test"])
+    drawSprite(textures["sprites"],   0, 240, 0, lists["test"])
+    drawSprite(textures["sprites"],   0, 480, 0, lists["test"])
+    drawSprite(textures["sprites"], 640, 240, 0, lists["test"])
+    drawSprite(textures["sprites"], 640, 480, 0, lists["test"])
 
     t := float64(time.Now().UnixNano()) / math.Pow(10, 9)
 
-    x := (math.Sin(2*math.Pi*t/60) + 1)/2 * float64(width)
-    y := (math.Cos(2*math.Pi*t/60) + 1)/2 * float64(height)
-    drawSprite(textures["sprites"], x, y, lists["test"])
+    a := 2 * math.Pi * t / 60
+    x := (math.Sin(a) + 1) / 2 * float64(width)
+    y := (math.Cos(a) + 1) / 2 * float64(height)
+    drawSprite(textures["sprites"], x, y, -a, lists["test"])
 
-    x = (math.Sin(10*2*math.Pi*t/60) + 1)/2 * float64(width)
-    y = (math.Cos(10*2*math.Pi*t/60) + 1)/2 * float64(height)
-    drawSprite(textures["sprites"], x, y, lists["test"])
+    a = 10 * 2 * math.Pi * t / 60
+    x = (math.Sin(a) + 1) / 2 * float64(width)
+    y = (math.Cos(a) + 1) / 2 * float64(height)
+    drawSprite(textures["sprites"], x, y, -a, lists["test"])
 
-    x = (math.Sin(60*2*math.Pi*t/60) + 1)/2 * float64(width)
-    y = (math.Cos(60*2*math.Pi*t/60) + 1)/2 * float64(height)
-    drawSprite(textures["sprites"], x, y, lists["test"])
+    a = 60 * 2 * math.Pi * t / 60
+    x = (math.Sin(a) + 1) / 2 * float64(width)
+    y = (math.Cos(a) + 1) / 2 * float64(height)
+    drawSprite(textures["sprites"], x, y, -a, lists["test"])
 }

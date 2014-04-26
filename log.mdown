@@ -79,3 +79,17 @@ All time is CEST
   After much fight against GLOrtho, now having arbitrary sprite positioning in viewport coordinates.
 
   ![](screenshots/3.png)
+
+- 17:55
+
+  Girlfriend back home. Let's take a break and have a walk outside.
+
+- 19:15
+
+  Back to the task!
+
+- 19:40
+
+  Sprite rotation support
+
+  ![](screenshots/4.gif)

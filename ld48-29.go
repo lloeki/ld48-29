@@ -98,30 +98,49 @@ func readTexture(r io.Reader) (texId gl.Texture, err error) {
 }
 
 func spriteQuad(x int, y int, w int, h int) {
-    size := 256
-    unit := 16
+    scaledSpriteQuad(x, y, w, h, 1.0)
+}
 
-    x1 := x * unit
-    y1 := y * unit
+func scaledSpriteQuad(x int, y int, w int, h int, scale float32) {
+    // TODO: set elsewhere (spritesheet property)
+    size := 256 // spritesheet size
+    unit :=  16 // sprite unit size
+
+    // sprite to absolute pixel coords
+    // origin is as tex: bottom-left
+    x1 :=      x * unit
+    y1 :=      y * unit
     x2 := x1 + w * unit
     y2 := y1 + h * unit
 
+    // abs pixel to relative tex coords
     rx1 := float32(x1) / float32(size)
     rx2 := float32(x2) / float32(size)
     ry1 := float32(y1) / float32(size)
     ry2 := float32(y2) / float32(size)
 
+    // scale sprite
+    qsize := 1.0 * scale
+
+    // relative model coords
+    // sprite-centered origin
+    qx1 := -qsize * float32(w) / 2.0
+    qy1 := -qsize * float32(h) / 2.0
+    qx2 :=  qsize * float32(w) / 2.0
+    qy2 :=  qsize * float32(h) / 2.0
+
+    // draw sprite quad
     gl.MatrixMode(gl.MODELVIEW)
     gl.Begin(gl.QUADS)
     gl.Normal3f(0, 0, 1)
     gl.TexCoord2f(rx1, ry1)
-    gl.Vertex3f(-1.0, -1.0, 1.0)
+    gl.Vertex3f(qx1, qy1, 1.0)
     gl.TexCoord2f(rx2, ry1)
-    gl.Vertex3f(1.0, -1.0, 1.0)
+    gl.Vertex3f(qx2, qy1, 1.0)
     gl.TexCoord2f(rx2, ry2)
-    gl.Vertex3f(1.0, 1.0, 1.0)
+    gl.Vertex3f(qx2, qy2, 1.0)
     gl.TexCoord2f(rx1, ry2)
-    gl.Vertex3f(-1.0, 1.0, 1.0)
+    gl.Vertex3f(qx1, qy2, 1.0)
     gl.End()
 }
 
@@ -182,7 +201,7 @@ func setup() (textures map[string]gl.Texture, lists map[string]uint) {
 
     quad := gl.GenLists(1)
     gl.NewList(quad, gl.COMPILE)
-    spriteQuad(0, 0, 4, 4)
+    spriteQuad(0, 0, 2, 2)
     gl.EndList()
 
     lists["test"] = quad
@@ -197,13 +216,16 @@ func destroy(textures map[string]gl.Texture) {
 }
 
 func render(textures map[string]gl.Texture, lists map[string]uint) {
+    // start afresh
     gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-    gl.MatrixMode(gl.PROJECTION)
 
+    // set viewport
+    gl.MatrixMode(gl.PROJECTION)
     gl.LoadIdentity()
     gl.Frustum(-1, 1, -1, 1, 1.0, 10.0)
     gl.Translatef(0, 0, -3.0)
 
+    // lighten things
     ambient    := []float32{0.5, 0.5, 0.5, 1}
     diffuse    := []float32{1, 1, 1, 1}
     lightpos   := []float32{-5, 5, 10, 0}
@@ -213,6 +235,5 @@ func render(textures map[string]gl.Texture, lists map[string]uint) {
     gl.Enable(gl.LIGHT0)
 
     textures["sprites"].Bind(gl.TEXTURE_2D)
-    gl.Color4f(1, 1, 1, 1)
     gl.CallList(lists["test"])
 }

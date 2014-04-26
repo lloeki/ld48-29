@@ -69,3 +69,7 @@ All time is CEST
   Getting to terms with OpenGL. Sprite system coming along nicely
 
   ![](screenshots/2.png)
+
+- 16:09
+
+  Sprites keep their relative size and aspect ratio. Also, sprite scaling.

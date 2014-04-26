@@ -25,4 +25,21 @@ func main() {
         panic("Can't init glfw!")
     }
     defer glfw.Terminate()
+
+    window, err := glfw.CreateWindow(640, 480, "LD48", nil, nil)
+    if err != nil {
+        log.Panic(err)
+    }
+
+    window.MakeContextCurrent()
+
+    for !window.ShouldClose() {
+        render()
+        window.SwapBuffers()
+        glfw.PollEvents()
+    }
+}
+
+func render() {
+    // TODO: draw!
 }

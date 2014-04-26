@@ -159,6 +159,17 @@ func drawSprite(texture gl.Texture, x float64, y float64, a float64, list uint) 
 // main
 
 func main() {
+    c := make(chan int)
+
+    go renderer(c)
+
+    <-c
+}
+
+
+// renderer
+
+func renderer(c chan int) {
     runtime.LockOSThread()
 
     glfw.SetErrorCallback(onError)
@@ -185,10 +196,9 @@ func main() {
         window.SwapBuffers()
         glfw.PollEvents()
     }
+
+    c <- 1
 }
-
-
-// renderer
 
 func setup() (textures map[string]gl.Texture, lists map[string]uint) {
     gl.Enable(gl.TEXTURE_2D)

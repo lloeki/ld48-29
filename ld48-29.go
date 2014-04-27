@@ -179,6 +179,40 @@ func makeSprite(x int, y int, w int, h int) (quad uint) {
     return
 }
 
+func drawTile(texture gl.Texture, x int, y int, list uint) {
+    sx := float64(16 * x + 16 / 2)
+    sy := float64(16 * y + 16 / 2)
+    drawSprite(texture, sx, sy, 0, 1, list)
+}
+
+func drawWaterTile(x int, y int, t float64) {
+    waveHeight := 0.0
+    wavePhase := -1 + x % 2 * 2
+
+    if (t > 0) {
+        waveHeight = float64(wavePhase) * math.Sin(t)
+    }
+
+    qx1, qy1 := 16 * float32(x), 16 * float32(y)
+    qx2, qy2 := qx1 + 16, qy1 + 16
+
+    gl.Disable(gl.TEXTURE_2D)
+    gl.Disable(gl.LIGHTING)
+    gl.MatrixMode(gl.MODELVIEW)
+    gl.LoadIdentity()
+    gl.Color4f(0.0, 0.0, 0.5, 0.3)
+
+    gl.Begin(gl.QUADS)
+    gl.Normal3f(0.0, 0.0, 1.0)
+    gl.Vertex3f(qx1, qy1, 1.0)
+    gl.Vertex3f(qx2, qy1, 1.0)
+    gl.Vertex3f(qx2, qy2 + float32(waveHeight), 1.0)
+    gl.Vertex3f(qx1, qy2 + float32(waveHeight), 1.0)
+    gl.End()
+
+    gl.Enable(gl.LIGHTING)
+    gl.Enable(gl.TEXTURE_2D)
+}
 
 // main
 
@@ -341,25 +375,30 @@ func render(textures map[string]gl.Texture, lists map[string]uint) {
 
     // wall tiles
 
-    for i:= 0; i < 11; i++ {
-        drawSprite(textures["sprites"], 3*16+16/2, 16*float64(i)+16/2, 0, 1, lists["stonewallright"])
+    for j := 0; j < 11; j++ {
+        drawTile(textures["sprites"], 3, j, lists["stonewallright"])
     }
-    drawSprite(textures["sprites"], 3*16+16/2, 1*16*float64(11)+16/2, 0, 1, lists["stonewalltopright"])
+    drawTile(textures["sprites"], 3, 11, lists["stonewalltopright"])
 
-    for i:= 0; i < 11; i++ {
-        drawSprite(textures["sprites"], 2*16+16/2, 16*float64(i)+16/2, 0, 1, lists["stonewall"])
+    for i := 0; i < 3; i++ {
+        for j:= 0; j < 11; j++ {
+            drawTile(textures["sprites"], i, j, lists["stonewall"])
+        }
+        drawTile(textures["sprites"], i, 11, lists["stonewalltop"])
     }
-    drawSprite(textures["sprites"], 2*16+16/2, 1*16*float64(11)+16/2, 0, 1, lists["stonewalltop"])
 
-    for i:= 0; i < 11; i++ {
-        drawSprite(textures["sprites"], 1*16+16/2, 16*float64(i)+16/2, 0, 1, lists["stonewall"])
+    // water
+    for i := 0; i < 640 / 16; i++ {
+        for j := 0; j < 3; j++ {
+            wt := 0.0
+            if j == 2 {
+                wt = t
+            }
+            drawWaterTile(i, j, wt)
+        }
     }
-    drawSprite(textures["sprites"], 1*16+16/2, 1*16*float64(11)+16/2, 0, 1, lists["stonewalltop"])
 
-    for i:= 0; i < 11; i++ {
-        drawSprite(textures["sprites"], 0*16+16/2, 16*float64(i)+16/2, 0, 1, lists["stonewall"])
-    }
-    drawSprite(textures["sprites"], 0*16+16/2, 1*16*float64(11)+16/2, 0, 1, lists["stonewalltop"])
+    // mouse pointer
 
     if mouseVisible {
         drawSprite(textures["sprites"], mouseX, mouseY, 0, 1.0, lists["cursor"])

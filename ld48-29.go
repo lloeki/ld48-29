@@ -169,6 +169,15 @@ func drawSprite(texture gl.Texture, x float64, y float64, a float64, list uint) 
     gl.CallList(list)
 }
 
+func makeSprite(x int, y int, w int, h int) (quad uint) {
+    quad = gl.GenLists(1)
+    gl.NewList(quad, gl.COMPILE)
+    spriteQuad(x, y, w, h)
+    gl.EndList()
+
+    return
+}
+
 
 // main
 
@@ -254,6 +263,8 @@ func setup() (textures map[string]gl.Texture, lists map[string]uint) {
     textures = map[string]gl.Texture{}
     lists = map[string]uint{}
 
+    // load spritesheet and make sprites
+
     img, err := os.Open("spritesheet.png")
     if err != nil { log.Panic(err) }
     defer img.Close()
@@ -262,19 +273,8 @@ func setup() (textures map[string]gl.Texture, lists map[string]uint) {
     if err != nil { log.Panic(err) }
     textures["sprites"] = spriteSheet
 
-    quad := gl.GenLists(1)
-    gl.NewList(quad, gl.COMPILE)
-    spriteQuad(0, 0, 2, 2)
-    gl.EndList()
-
-    lists["test"] = quad
-
-    quad = gl.GenLists(1)
-    gl.NewList(quad, gl.COMPILE)
-    spriteQuad(2, 0, 1, 1)
-    gl.EndList()
-
-    lists["cursor"] = quad
+    lists["test"] = makeSprite(0, 0, 2, 2)
+    lists["cursor"] = makeSprite(2, 0, 1, 1)
 
     return
 }

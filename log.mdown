@@ -131,3 +131,23 @@ All time is CEST
   This is vaguely starting to ressemble a form of game.
 
   ![](screenshots/5.png)
+
+- 14:19
+
+  Now I have a sea moving. Time for a break.
+
+- 14:59
+
+  Back to jamming
+
+- 15:50
+
+  Tiling water instead of hardcoded quads.
+
+- 16:02
+
+  Sprite tiling functions.
+
+- 19:25
+
+  Window size independence. More clouds, better tiles. Second platform.

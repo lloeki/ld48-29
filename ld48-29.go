@@ -238,6 +238,9 @@ var mouseX float64
 var mouseY float64
 var mouseVisible bool
 
+var ww int
+var wh int
+
 func renderer(done chan int, input chan int) {
     runtime.LockOSThread()
 
@@ -250,7 +253,10 @@ func renderer(done chan int, input chan int) {
 
     glfw.WindowHint(glfw.Resizable, 0)
 
-    window, err := glfw.CreateWindow(640, 480, "LD48-29", nil, nil)
+    ww = 640*2
+    wh = 480*2
+
+    window, err := glfw.CreateWindow(ww, wh, "LD48-29", nil, nil)
     if err != nil {
         log.Panic(err)
     }
@@ -262,8 +268,10 @@ func renderer(done chan int, input chan int) {
     }
 
     onMouseClosure := func (window *glfw.Window, x float64, y float64) {
-        mouseX, mouseY = x, 480 - y
-        mouseVisible = mouseX < 640 && mouseX >= 0 && mouseY < 480 && mouseY >= 0
+        rx := float64(ww) / (vx2 - vx1)
+        ry := float64(wh) / (vy2 - vy1)
+        mouseX, mouseY = x/rx - vx1, vy2 - (y/ry - vy1)
+        mouseVisible = mouseX < vx2 && mouseX >= 0 && mouseY < vy2 && mouseY >= 0
     }
 
     window.SetKeyCallback(onKeyClosure)
@@ -309,12 +317,16 @@ func setup() (textures map[string]gl.Texture, lists map[string]uint) {
     textures["sprites"] = spriteSheet
 
     lists["test"] = makeSprite(0, 0, 2, 2)
-    lists["cursor"] = makeSprite(4, 0, 1, 1)
-    lists["cloud"] = makeSprite(0, 2, 3, 2)
+    lists["cursor"] = makeSprite(3, 2, 1, 1)
+    lists["cloud1"] = makeSprite(0, 2, 3, 2)
+    lists["cloud2"] = makeSprite(0, 4, 2, 2)
+    lists["cloud3"] = makeSprite(2, 4, 2, 2)
     lists["stonewall"] = makeSprite(2, 0, 1, 1)
     lists["stonewallright"] = makeSprite(3, 0, 1, 1)
     lists["stonewalltopright"] = makeSprite(3, 1, 1, 1)
     lists["stonewalltop"] = makeSprite(2, 1, 1, 1)
+    lists["stonewallleft"] = makeSprite(4, 0, 1, 1)
+    lists["stonewalltopleft"] = makeSprite(4, 1, 1, 1)
 
     return
 }
@@ -325,18 +337,30 @@ func destroy(textures map[string]gl.Texture) {
     }
 }
 
+var vx1 float64
+var vy1 float64
+var vx2 float64
+var vy2 float64
+
 func render(textures map[string]gl.Texture, lists map[string]uint) {
     // start afresh
     gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
     // set viewport
-    width := float32(640.0)
-    height := float32(480.0)
+    width := float32(ww)
+    height := float32(wh)
     density := 2 // times 2 because HiDPI
     gl.Viewport(0, 0, int(width)*density, int(height)*density)
+
+    vw := 320
+    vh := 240
+
+    // set projection
     gl.MatrixMode(gl.PROJECTION)
     gl.LoadIdentity()
-    gl.Ortho(0, float64(width), 0, float64(height), -1.0, 1.0)
+    vx1, vy1 = 0, 0
+    vx2, vy2 = float64(vw), float64(vh)
+    gl.Ortho(vx1, vx2, vy1, vy2, -1.0, 1.0)
 
     gl.MatrixMode(gl.MODELVIEW);
     gl.LoadIdentity()
@@ -346,49 +370,43 @@ func render(textures map[string]gl.Texture, lists map[string]uint) {
     gl.Lightfv(gl.LIGHT0, gl.AMBIENT, ambient)
     gl.Enable(gl.LIGHT0)
 
-
-    // clouds
+    // time source
 
     t := float64(time.Now().UnixNano()) / math.Pow(10, 9)
 
+    // clouds
+
     fy := 2 * math.Pi * t / 60
-    _, f := math.Modf(3*t/1000)
-    drawSprite(textures["sprites"], math.Mod(f*640, 640), 400+8*math.Sin(fy/1.3), 0, 3.0, lists["cloud"])
-
-    _, f = math.Modf(33*t/1000)
-    drawSprite(textures["sprites"], math.Mod(f*640+35, 640), 300+4*math.Sin(fy+3), 0, 2.0, lists["cloud"])
-
-    _, f = math.Modf(31*t/1000)
-    drawSprite(textures["sprites"], math.Mod(f*640+142, 640), 340+3*math.Sin(fy/3+1), 0, 2.5, lists["cloud"])
-
-    _, f = math.Modf(17*t/1000)
-    drawSprite(textures["sprites"], math.Mod(f*640+213, 640), 450+7*math.Sin(fy/1.5+2), 0, 1.0, lists["cloud"])
-
-    _, f = math.Modf(11*t/1000)
-    drawSprite(textures["sprites"], math.Mod(f*640+317, 640), 400+5*math.Sin(fy/2+1.1), 0, 1.5, lists["cloud"])
-
-    _, f = math.Modf(27*t/1000)
-    drawSprite(textures["sprites"], math.Mod(f*640+332, 640), 380+3*math.Sin(fy/4+3.1), 0, 1.5, lists["cloud"])
-
-    _, f = math.Modf(13*t/1000)
-    drawSprite(textures["sprites"], math.Mod(f*640+417, 640), 420+5*math.Sin(fy/2.2+2.5), 0, 1.0, lists["cloud"])
+    drawSprite(textures["sprites"], 200, 200+8*math.Sin(fy/1.3), 0, 2.0, lists["cloud1"])
 
     // wall tiles
 
-    for j := 0; j < 11; j++ {
+    for j := 0; j < 9; j++ {
         drawTile(textures["sprites"], 3, j, lists["stonewallright"])
     }
-    drawTile(textures["sprites"], 3, 11, lists["stonewalltopright"])
+    drawTile(textures["sprites"], 3, 9, lists["stonewalltopright"])
 
     for i := 0; i < 3; i++ {
-        for j:= 0; j < 11; j++ {
+        for j:= 0; j < 9; j++ {
             drawTile(textures["sprites"], i, j, lists["stonewall"])
         }
-        drawTile(textures["sprites"], i, 11, lists["stonewalltop"])
+        drawTile(textures["sprites"], i, 9, lists["stonewalltop"])
+    }
+
+    for j := 0; j < 6; j++ {
+        drawTile(textures["sprites"], 19 - 2, j, lists["stonewallleft"])
+    }
+    drawTile(textures["sprites"], 19 - 2, 6, lists["stonewalltopleft"])
+
+    for i := 0; i < 2; i++ {
+        for j:= 0; j < 6; j++ {
+            drawTile(textures["sprites"], 19 - i, j, lists["stonewall"])
+        }
+        drawTile(textures["sprites"], 19 - i, 6, lists["stonewalltop"])
     }
 
     // water
-    for i := 0; i < 640 / 16; i++ {
+    for i := 0; i < 320 / 16; i++ {
         for j := 0; j < 3; j++ {
             wt := 0.0
             if j == 2 {

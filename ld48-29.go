@@ -298,7 +298,8 @@ func render(textures map[string]gl.Texture, lists map[string]uint) {
     // set viewport
     width := float32(640.0)
     height := float32(480.0)
-    gl.Viewport(0, 0, int(width)*2, int(height)*2) // times 2 because HiDPI
+    density := 2 // times 2 because HiDPI
+    gl.Viewport(0, 0, int(width)*density, int(height)*density)
     gl.MatrixMode(gl.PROJECTION)
     gl.LoadIdentity()
     gl.Ortho(0, float64(width), 0, float64(height), -1.0, 1.0)

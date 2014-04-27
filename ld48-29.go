@@ -160,12 +160,13 @@ func scaledSpriteQuad(x int, y int, w int, h int, scale float32) {
     gl.End()
 }
 
-func drawSprite(texture gl.Texture, x float64, y float64, a float64, list uint) {
+func drawSprite(texture gl.Texture, x float64, y float64, a float64, s float64, list uint) {
     deg := math.Mod(360 * float64(a) / (2 * math.Pi), 360.0)
     gl.LoadIdentity()
     texture.Bind(gl.TEXTURE_2D)
     gl.Translatef(float32(x), float32(y), 0)
     gl.Rotatef(float32(deg), 0.0, 0.0, 1.0);
+    gl.Scalef(float32(s), float32(s), 1.0)
     gl.CallList(list)
 }
 
@@ -255,7 +256,7 @@ func setup() (textures map[string]gl.Texture, lists map[string]uint) {
     gl.Enable(gl.CULL_FACE)
     gl.Enable(gl.BLEND)
 
-    gl.ClearColor(0.0, 0.0, 0.5, 0)
+    gl.ClearColor(0.4, 0.8, 0.95, 0)
     gl.ClearDepth(1)
     gl.DepthFunc(gl.LEQUAL)
     gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -274,7 +275,12 @@ func setup() (textures map[string]gl.Texture, lists map[string]uint) {
     textures["sprites"] = spriteSheet
 
     lists["test"] = makeSprite(0, 0, 2, 2)
-    lists["cursor"] = makeSprite(2, 0, 1, 1)
+    lists["cursor"] = makeSprite(4, 0, 1, 1)
+    lists["cloud"] = makeSprite(0, 2, 3, 2)
+    lists["stonewall"] = makeSprite(2, 0, 1, 1)
+    lists["stonewallright"] = makeSprite(3, 0, 1, 1)
+    lists["stonewalltopright"] = makeSprite(3, 1, 1, 1)
+    lists["stonewalltop"] = makeSprite(2, 1, 1, 1)
 
     return
 }
@@ -301,63 +307,60 @@ func render(textures map[string]gl.Texture, lists map[string]uint) {
     gl.LoadIdentity()
 
     // lighten things
-    ambient    := []float32{0.5, 0.5, 0.5, 1}
-    diffuse    := []float32{1, 1, 1, 1}
-    lightpos   := []float32{-5, 5, 10, 0}
+    ambient    := []float32{1, 1, 1, 1}
     gl.Lightfv(gl.LIGHT0, gl.AMBIENT, ambient)
-    gl.Lightfv(gl.LIGHT0, gl.DIFFUSE, diffuse)
-    gl.Lightfv(gl.LIGHT0, gl.POSITION, lightpos)
     gl.Enable(gl.LIGHT0)
 
-    gl.Disable(gl.TEXTURE_2D)
-    gl.Disable(gl.LIGHTING)
-    gl.Begin(gl.TRIANGLES)
-    gl.Color3f(1.0, 0.0, 0.0)
-    gl.Vertex3f(0, 0, 0.0)
-    gl.Color3f(0.0, 1.0, 0.0)
-    gl.Vertex3f(width, 0, 0.0)
-    gl.Color3f(0.0, 0.0, 1.0)
-    gl.Vertex3f(0.0, height, 0.0)
-    gl.End()
-    gl.Begin(gl.TRIANGLES)
-    gl.Color3f(1.0, 0.0, 0.0)
-    gl.Vertex3f(width, height, 0.0)
-    gl.Color3f(0.0, 0.0, 1.0)
-    gl.Vertex3f(0.0, height, 0.0)
-    gl.Color3f(0.0, 1.0, 0.0)
-    gl.Vertex3f(width, 0, 0.0)
-    gl.End()
-    gl.Enable(gl.TEXTURE_2D)
-    gl.Enable(gl.LIGHTING)
 
-    drawSprite(textures["sprites"],   0,   0, 0, lists["test"])
-    drawSprite(textures["sprites"], 320,   0, 0, lists["test"])
-    drawSprite(textures["sprites"], 640,   0, 0, lists["test"])
-    drawSprite(textures["sprites"], 320, 240, 0, lists["test"])
-    drawSprite(textures["sprites"], 320, 480, 0, lists["test"])
-    drawSprite(textures["sprites"],   0, 240, 0, lists["test"])
-    drawSprite(textures["sprites"],   0, 480, 0, lists["test"])
-    drawSprite(textures["sprites"], 640, 240, 0, lists["test"])
-    drawSprite(textures["sprites"], 640, 480, 0, lists["test"])
+    // clouds
 
     t := float64(time.Now().UnixNano()) / math.Pow(10, 9)
 
-    a := 2 * math.Pi * t / 60
-    x := (math.Sin(a) + 1) / 2 * float64(width)
-    y := (math.Cos(a) + 1) / 2 * float64(height)
-    drawSprite(textures["sprites"], x, y, -a, lists["test"])
+    fy := 2 * math.Pi * t / 60
+    _, f := math.Modf(3*t/1000)
+    drawSprite(textures["sprites"], math.Mod(f*640, 640), 400+8*math.Sin(fy/1.3), 0, 3.0, lists["cloud"])
 
-    a = 10 * 2 * math.Pi * t / 60
-    x = (math.Sin(a) + 1) / 2 * float64(width)
-    y = (math.Cos(a) + 1) / 2 * float64(height)
-    drawSprite(textures["sprites"], x, y, -a, lists["test"])
+    _, f = math.Modf(33*t/1000)
+    drawSprite(textures["sprites"], math.Mod(f*640+35, 640), 300+4*math.Sin(fy+3), 0, 2.0, lists["cloud"])
 
-    a = 60 * 2 * math.Pi * t / 60
-    x = (math.Sin(a) + 1) / 2 * float64(width)
-    y = (math.Cos(a) + 1) / 2 * float64(height)
-    drawSprite(textures["sprites"], x, y, -a, lists["test"])
+    _, f = math.Modf(31*t/1000)
+    drawSprite(textures["sprites"], math.Mod(f*640+142, 640), 340+3*math.Sin(fy/3+1), 0, 2.5, lists["cloud"])
+
+    _, f = math.Modf(17*t/1000)
+    drawSprite(textures["sprites"], math.Mod(f*640+213, 640), 450+7*math.Sin(fy/1.5+2), 0, 1.0, lists["cloud"])
+
+    _, f = math.Modf(11*t/1000)
+    drawSprite(textures["sprites"], math.Mod(f*640+317, 640), 400+5*math.Sin(fy/2+1.1), 0, 1.5, lists["cloud"])
+
+    _, f = math.Modf(27*t/1000)
+    drawSprite(textures["sprites"], math.Mod(f*640+332, 640), 380+3*math.Sin(fy/4+3.1), 0, 1.5, lists["cloud"])
+
+    _, f = math.Modf(13*t/1000)
+    drawSprite(textures["sprites"], math.Mod(f*640+417, 640), 420+5*math.Sin(fy/2.2+2.5), 0, 1.0, lists["cloud"])
+
+    // wall tiles
+
+    for i:= 0; i < 11; i++ {
+        drawSprite(textures["sprites"], 3*16+16/2, 16*float64(i)+16/2, 0, 1, lists["stonewallright"])
+    }
+    drawSprite(textures["sprites"], 3*16+16/2, 1*16*float64(11)+16/2, 0, 1, lists["stonewalltopright"])
+
+    for i:= 0; i < 11; i++ {
+        drawSprite(textures["sprites"], 2*16+16/2, 16*float64(i)+16/2, 0, 1, lists["stonewall"])
+    }
+    drawSprite(textures["sprites"], 2*16+16/2, 1*16*float64(11)+16/2, 0, 1, lists["stonewalltop"])
+
+    for i:= 0; i < 11; i++ {
+        drawSprite(textures["sprites"], 1*16+16/2, 16*float64(i)+16/2, 0, 1, lists["stonewall"])
+    }
+    drawSprite(textures["sprites"], 1*16+16/2, 1*16*float64(11)+16/2, 0, 1, lists["stonewalltop"])
+
+    for i:= 0; i < 11; i++ {
+        drawSprite(textures["sprites"], 0*16+16/2, 16*float64(i)+16/2, 0, 1, lists["stonewall"])
+    }
+    drawSprite(textures["sprites"], 0*16+16/2, 1*16*float64(11)+16/2, 0, 1, lists["stonewalltop"])
 
     if mouseVisible {
-        drawSprite(textures["sprites"], mouseX, mouseY, 0, lists["cursor"])
+        drawSprite(textures["sprites"], mouseX, mouseY, 0, 1.0, lists["cursor"])
     }
 }

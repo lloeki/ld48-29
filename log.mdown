@@ -117,3 +117,17 @@ All time is CEST
 - 10:50
 
   A good night sleep is a good call. Sprites are easier to make.
+
+- 12:09
+
+  Drawing clouds. This is starting to look like an actual game.
+
+- 12:10
+
+  Going back to hotel.
+
+- 13:55
+
+  This is vaguely starting to ressemble a form of game.
+
+  ![](screenshots/5.png)

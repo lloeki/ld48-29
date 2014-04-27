@@ -18,6 +18,12 @@ import (
 
 var _ = pa.Initialize // TODO: remove later
 
+const (
+    INPUT_UP    = 0
+    INPUT_DOWN  = 1
+    INPUT_LEFT  = 2
+    INPUT_RIGHT = 3
+)
 
 // iterate faster
 
@@ -44,7 +50,7 @@ func onError(err glfw.ErrorCode, desc string) {
 }
 
 func onKey(input chan int, window *glfw.Window, k glfw.Key, s int, action glfw.Action, mods glfw.ModifierKey) {
-    if action != glfw.Press {
+    if action != glfw.Press{
         return
     }
 
@@ -53,8 +59,14 @@ func onKey(input chan int, window *glfw.Window, k glfw.Key, s int, action glfw.A
         if mods & glfw.ModSuper != 0 {
             reexec()
         }
-    case glfw.KeyUp, glfw.KeyDown, glfw.KeyLeft, glfw.KeyRight:
-        input <- 1
+    case glfw.KeyUp:
+        input <- INPUT_UP
+    case glfw.KeyDown:
+        input <- INPUT_DOWN
+    case glfw.KeyLeft:
+        input <- INPUT_LEFT
+    case glfw.KeyRight:
+        input <- INPUT_RIGHT
     case glfw.KeyEscape:
         window.SetShouldClose(true)
     default:
@@ -167,8 +179,8 @@ func main() {
     go renderer(done, input)
     go func() {
         for {
-            _ = <- input
-            log.Print("input")
+            in := <- input
+            log.Printf("input %d", in)
         }
     }()
 
@@ -177,6 +189,10 @@ func main() {
 
 
 // renderer
+
+var mouseX float64
+var mouseY float64
+var mouseVisible bool
 
 func renderer(done chan int, input chan int) {
     runtime.LockOSThread()
@@ -188,16 +204,26 @@ func renderer(done chan int, input chan int) {
     }
     defer glfw.Terminate()
 
+    glfw.WindowHint(glfw.Resizable, 0)
+
     window, err := glfw.CreateWindow(640, 480, "LD48-29", nil, nil)
     if err != nil {
         log.Panic(err)
     }
 
+    window.SetInputMode(glfw.Cursor, glfw.CursorHidden)
+
     onKeyClosure := func (window *glfw.Window, k glfw.Key, s int, action glfw.Action, mods glfw.ModifierKey) {
         onKey(input, window, k, s, action, mods)
     }
 
+    onMouseClosure := func (window *glfw.Window, x float64, y float64) {
+        mouseX, mouseY = x, 480 - y
+        mouseVisible = mouseX < 640 && mouseX >= 0 && mouseY < 480 && mouseY >= 0
+    }
+
     window.SetKeyCallback(onKeyClosure)
+    window.SetCursorPositionCallback(onMouseClosure)
 
     window.MakeContextCurrent()
 
@@ -218,10 +244,12 @@ func setup() (textures map[string]gl.Texture, lists map[string]uint) {
     gl.Enable(gl.DEPTH_TEST)
     gl.Enable(gl.LIGHTING)
     gl.Enable(gl.CULL_FACE)
+    gl.Enable(gl.BLEND)
 
     gl.ClearColor(0.0, 0.0, 0.5, 0)
     gl.ClearDepth(1)
     gl.DepthFunc(gl.LEQUAL)
+    gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
     textures = map[string]gl.Texture{}
     lists = map[string]uint{}
@@ -240,6 +268,13 @@ func setup() (textures map[string]gl.Texture, lists map[string]uint) {
     gl.EndList()
 
     lists["test"] = quad
+
+    quad = gl.GenLists(1)
+    gl.NewList(quad, gl.COMPILE)
+    spriteQuad(2, 0, 1, 1)
+    gl.EndList()
+
+    lists["cursor"] = quad
 
     return
 }
@@ -321,4 +356,8 @@ func render(textures map[string]gl.Texture, lists map[string]uint) {
     x = (math.Sin(a) + 1) / 2 * float64(width)
     y = (math.Cos(a) + 1) / 2 * float64(height)
     drawSprite(textures["sprites"], x, y, -a, lists["test"])
+
+    if mouseVisible {
+        drawSprite(textures["sprites"], mouseX, mouseY, 0, lists["cursor"])
+    }
 }

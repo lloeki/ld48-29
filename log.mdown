@@ -97,3 +97,20 @@ All time is CEST
 - 20:34
 
   Going concurrent. Goroutines, channels and closures make passing input events outside the locked OpenGL thread *really* easy.
+
+- 20:51
+
+  Time for another break. Calories needed.
+
+- 21:30
+
+  Back to jamming! ... on and off.
+
+- 23:45
+
+  Managed to do some mouse tracking with sprite pointer
+
+- 10:39
+
+  Moved out to nearby Starbucks. Connection is crappy, but back to jamming.
+

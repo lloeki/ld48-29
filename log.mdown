@@ -151,3 +151,33 @@ All time is CEST
 - 19:25
 
   Window size independence. More clouds, better tiles. Second platform.
+
+- 21:55
+
+  Train departure.
+
+- 22:35
+
+  Input state management in additional goroutine done.
+
+- 23:00
+
+  Stuck in world update iteration, missing how to have its goroutine sleep.
+
+- 23:09
+
+  Worked around by having the physics goroutine tied to video ticks via a
+  channel.
+
+- 23:39
+
+  Broken physics integrator does stupid things. To the moon in seconds, physics
+  is fun!
+
+- 23:57
+
+  Problem solved. Was accumulating twice. Now to find nice constants for movement.
+
+- 00:07
+
+  Train arrives. Integrator stubbornly refuses to move player left more than once.

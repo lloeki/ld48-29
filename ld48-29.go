@@ -23,6 +23,7 @@ const (
     INPUT_DOWN  = 1
     INPUT_LEFT  = 2
     INPUT_RIGHT = 3
+    INPUT_JUMP  = 4
 )
 
 // iterate faster
@@ -50,25 +51,34 @@ func onError(err glfw.ErrorCode, desc string) {
 }
 
 func onKey(input chan int, window *glfw.Window, k glfw.Key, s int, action glfw.Action, mods glfw.ModifierKey) {
-    if action != glfw.Press{
+    if action != glfw.Press && action != glfw.Release {
         return
+    }
+
+    release := 0
+    if action == glfw.Release {
+        release = 8
     }
 
     switch glfw.Key(k) {
     case glfw.KeyR:
-        if mods & glfw.ModSuper != 0 {
+        if (mods & glfw.ModSuper != 0) && action == glfw.Press {
             reexec()
         }
     case glfw.KeyUp:
-        input <- INPUT_UP
+        input <- INPUT_UP + release
     case glfw.KeyDown:
-        input <- INPUT_DOWN
+        input <- INPUT_DOWN + release
     case glfw.KeyLeft:
-        input <- INPUT_LEFT
+        input <- INPUT_LEFT + release
     case glfw.KeyRight:
-        input <- INPUT_RIGHT
+        input <- INPUT_RIGHT + release
+    case glfw.KeySpace:
+        input <- INPUT_JUMP + release
     case glfw.KeyEscape:
-        window.SetShouldClose(true)
+        if action == glfw.Press {
+            window.SetShouldClose(true)
+        }
     default:
         return
     }
@@ -219,16 +229,94 @@ func drawWaterTile(x int, y int, t float64) {
 func main() {
     done := make(chan int)
     input := make(chan int, 64)
+    tick := make(chan int)
 
-    go renderer(done, input)
-    go func() {
-        for {
-            in := <- input
-            log.Printf("input %d", in)
-        }
-    }()
-
+    go renderer(done, input, tick)
+    go inputMapper(input)
+    go stepper(tick)
     <-done
+}
+
+// world
+
+var inputState [5]bool
+
+func inputMapper(input chan int) {
+    inputState = [5]bool{false,false,false,false,false}
+    for {
+        in := <- input
+        pressed := in < 8
+        if !pressed {
+            in = in - 8
+        }
+        inputState[in] = pressed
+    }
+}
+
+func stepper(tick chan int) {
+    pcx := 0.0
+    pcy := 0.0
+    ppx := pcx
+    ppy := pcy
+    pm  := 10.0
+
+    ct := float64(time.Now().UnixNano()) / math.Pow(10, 9)
+    pt := ct
+    dt := 0.0
+
+    for {
+        <-tick
+
+        pt, ct = ct, float64(time.Now().UnixNano()) / math.Pow(10, 9)
+        dt = ct - pt
+
+        pvx, pvy := (pcx - ppx) / dt, (pcy - ppy) / dt
+        ppx, ppy = pcx, pcy
+
+        fx := 0.0
+        fy := 0.0
+
+        // gravity
+        fy += -10.0 * pm
+
+        // movement
+        if inputState[INPUT_LEFT] {
+            fx += -20
+        }
+        if inputState[INPUT_RIGHT] {
+            fx += 20
+        }
+        if inputState[INPUT_JUMP] {
+            fy += 20 * pm
+        }
+
+        // friction
+        fx += -57 * pvx
+        fy += -57 * pvy
+
+        // integrator
+        pax := fx / pm
+        pay := fy / pm
+        pvx = pax * dt + pvx
+        pvy = pay * dt + pvy
+        dpcx := pvx * dt
+        dpcy := pvy * dt
+        if math.Abs(dpcx) < 0.001 {
+            dpcx = 0
+        }
+        if math.Abs(dpcy) < 0.001 {
+            dpcy = 0
+        }
+        pcx += dpcx
+        pcy += dpcy
+
+        if pcy < 0 {
+            pcy = 0
+        }
+
+        log.Printf("%.03f %.03f %.03f %.03f", pvx, pvy, pcx, pcy)
+    }
+
 }
 
 
@@ -237,11 +325,12 @@ func main() {
 var mouseX float64
 var mouseY float64
 var mouseVisible bool
+var mousePressed bool
 
 var ww int
 var wh int
 
-func renderer(done chan int, input chan int) {
+func renderer(done chan int, input chan int, tick chan int) {
     runtime.LockOSThread()
 
     glfw.SetErrorCallback(onError)
@@ -253,8 +342,8 @@ func renderer(done chan int, input chan int) {
 
     glfw.WindowHint(glfw.Resizable, 0)
 
-    ww = 640*2
-    wh = 480*2
+    ww = 640
+    wh = 480
 
     window, err := glfw.CreateWindow(ww, wh, "LD48-29", nil, nil)
     if err != nil {
@@ -274,8 +363,15 @@ func renderer(done chan int, input chan int) {
         mouseVisible = mouseX < vx2 && mouseX >= 0 && mouseY < vy2 && mouseY >= 0
     }
 
+    onMouseButtonClosure := func (window *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
+        if button == 0 {
+            mousePressed = action == 1
+        }
+    }
+
     window.SetKeyCallback(onKeyClosure)
     window.SetCursorPositionCallback(onMouseClosure)
+    window.SetMouseButtonCallback(onMouseButtonClosure)
 
     window.MakeContextCurrent()
 
@@ -286,6 +382,7 @@ func renderer(done chan int, input chan int) {
         render(textures, lists)
         window.SwapBuffers()
         glfw.PollEvents()
+        tick <- 1
     }
 
     done <- 1
@@ -318,6 +415,7 @@ func setup() (textures map[string]gl.Texture, lists map[string]uint) {
 
     lists["test"] = makeSprite(0, 0, 2, 2)
     lists["cursor"] = makeSprite(3, 2, 1, 1)
+    lists["cursorclick"] = makeSprite(3, 3, 1, 1)
     lists["cloud1"] = makeSprite(0, 2, 3, 2)
     lists["cloud2"] = makeSprite(0, 4, 2, 2)
     lists["cloud3"] = makeSprite(2, 4, 2, 2)
@@ -412,13 +510,17 @@ func render(textures map[string]gl.Texture, lists map[string]uint) {
             if j == 2 {
                 wt = t
             }
-            drawWaterTile(i, j, wt)
+            drawWaterTile(i, j, 4*wt)
         }
     }
 
     // mouse pointer
 
     if mouseVisible {
-        drawSprite(textures["sprites"], mouseX, mouseY, 0, 1.0, lists["cursor"])
+        cursor := lists["cursor"]
+        if mousePressed {
+            cursor = lists["cursorclick"]
+        }
+        drawSprite(textures["sprites"], mouseX, mouseY, 0, 1.0, cursor)
     }
 }

@@ -4,4 +4,4 @@ Theme: Beneath the Surface
 
 # License
 
-(c) Loic Nageleisen - All Rights Reserved
+(c) Loic Nageleisen - License: [ code: MIT, art: All Rights Reserved ]
